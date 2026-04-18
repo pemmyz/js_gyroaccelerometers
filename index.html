@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gyro Table Game</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Load Planck.js for Physics -->
+    <script src="https://cdn.jsdelivr.net/npm/planck-js@0.3.31/dist/planck.min.js"></script>
+</head>
+<body>
+
+    <!-- UI Overlay for Calibration -->
+    <div id="ui-layer">
+        <div id="menu">
+            <h1>Tilt Board</h1>
+            <p><strong>Mobile:</strong> Place phone flat on the table.</p>
+            <p><strong>Desktop:</strong> Use your mouse cursor to tilt.</p>
+            <button id="start-btn">Start Calibration</button>
+        </div>
+        
+        <div id="calibration-screen" class="hidden">
+            <h2>Calibrating...</h2>
+            <p>Do not move your device.</p>
+            <div id="countdown">4</div>
+        </div>
+    </div>
+
+    <!-- 3D Perspective Game Scene -->
+    <div id="scene">
+        <div id="table">
+            <canvas id="gameCanvas" width="600" height="600"></canvas>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
