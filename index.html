@@ -5,10 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gyro Table Game</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Load Planck.js for Physics -->
     <script src="https://cdn.jsdelivr.net/npm/planck-js@0.3.31/dist/planck.min.js"></script>
 </head>
 <body>
+
+    <!-- TOGGLE BUTTON -->
+    <button id="mobile-btn">📱 Fullscreen</button>
+
+    <!-- SENSOR STATS HUD (Top Right) -->
+    <div id="stats-panel">
+        <div><strong>Tilt (°):</strong> β:<span id="tilt-x">0.0</span> γ:<span id="tilt-y">0.0</span></div>
+        <div><strong>Acc (m/s²):</strong> X:<span id="acc-x">0.0</span> Y:<span id="acc-y">0.0</span> Z:<span id="acc-z">0.0</span></div>
+        <div><strong>Gyro (°/s):</strong> X:<span id="gyr-x">0.0</span> Y:<span id="gyr-y">0.0</span> Z:<span id="gyr-z">0.0</span></div>
+    </div>
 
     <!-- UI Overlay for Calibration -->
     <div id="ui-layer">
@@ -26,10 +35,13 @@
         </div>
     </div>
 
-    <!-- 3D Perspective Game Scene -->
-    <div id="scene">
-        <div id="table">
-            <canvas id="gameCanvas" width="600" height="600"></canvas>
+    <!-- GAME CONTAINER -->
+    <div id="game-container">
+        <!-- THE SCREEN: Fixed resolution internal logic -->
+        <div id="screen">
+            <div id="table">
+                <canvas id="gameCanvas" width="600" height="600"></canvas>
+            </div>
         </div>
     </div>
 
