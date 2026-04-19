@@ -76,7 +76,7 @@ const ball = world.createBody({
     position: pl.Vec2(widthM / 2, heightM / 2),
     linearDamping: 0.5,
     angularDamping: 0.5,
-    allowSleep: false // Prevents the ball from getting stuck asleep during the 4-second calibration
+    allowSleep: false 
 });
 
 ball.createFixture(pl.Circle(ballRadius), {
@@ -90,7 +90,6 @@ function scaleGame() {
     const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
     let baseScale = Math.min(window.innerWidth / 600, window.innerHeight / 600);
     
-    // Apply the custom multiplier from the options slider
     let screenScale = baseScale * boardSizeMultiplier;
     
     if (isFullscreen) {
@@ -114,25 +113,18 @@ window.addEventListener("webkitfullscreenchange", scaleGame);
 scaleGame(); 
 mobileToggleBtn.addEventListener('click', goFull);
 
-
 // --- TILT MATH HELPER ---
-// Function to handle the two different tilting styles
 function calculateTilt(rawValue) {
     if (tiltStyle === 'LINEAR') {
-        // OLD STYLE: Even, constant linear progression clamped to maxTilt
         return Math.max(-maxTilt, Math.min(maxTilt, rawValue));
     } else {
-        // NEW STYLE (Logarithmic): Fast early movement, then smoothly caps out at maxTilt
-        // Exponential decay acts like a perfect logarithmic/clamping curve here.
-        const aggressiveness = 0.15; // Higher = steeper initial climb
+        const aggressiveness = 0.15; 
         return Math.sign(rawValue) * maxTilt * (1 - Math.exp(-aggressiveness * Math.abs(rawValue)));
     }
 }
 
-
 // --- INPUT HANDLING (Desktop Mouse) ---
 window.addEventListener('mousemove', (e) => {
-    // If a real mobile device is detected, ignore the mouse
     if (gameState !== 'PLAYING' || isMobile) return;
     
     let centerX = window.innerWidth / 2;
@@ -141,7 +133,6 @@ window.addEventListener('mousemove', (e) => {
     let normX = (e.clientX - centerX) / centerX;
     let normY = (e.clientY - centerY) / centerY;
     
-    // Scale normalized value to our raw degrees, then apply formula
     let rawX = normX * maxTilt;
     let rawY = normY * maxTilt;
     
@@ -149,21 +140,16 @@ window.addEventListener('mousemove', (e) => {
     tiltY = calculateTilt(rawY);
 });
 
-
-// --- SENSOR ACTIVATION ---
+// --- SENSOR ACTIVATION & ORIENTATION HANDLING ---
 function attachSensors() {
     if (sensorsActive) return;
     sensorsActive = true;
 
-    // DEVICE ORIENTATION (Absolute Tilt)
     window.addEventListener('deviceorientation', (e) => {
         if (e.beta == null || e.gamma == null) return;
-        
-        // Desktop Chrome sends a fake event where beta and gamma are exactly 0.
-        // Physical phone sensors always have micro-noise (e.g., 0.002), so we ignore perfect zeros.
         if (e.beta === 0 && e.gamma === 0) return;
 
-        isMobile = true; // Physical sensors confirmed, disable mouse
+        isMobile = true;
 
         tiltXEl.innerText = e.beta.toFixed(1);
         tiltYEl.innerText = e.gamma.toFixed(1);
@@ -175,13 +161,40 @@ function attachSensors() {
             let rawBeta = e.beta - baseBeta;
             let rawGamma = e.gamma - baseGamma;
 
-            // Apply the chosen style curve (Swapped for mobile horizontal orientation)
-            tiltX = calculateTilt(rawBeta);
-            tiltY = calculateTilt(rawGamma);
+            // Detect current screen orientation
+            let angle = 0;
+            if (screen && screen.orientation && screen.orientation.angle !== undefined) {
+                angle = screen.orientation.angle;
+            } else if (typeof window.orientation !== 'undefined') {
+                angle = window.orientation;
+            }
+
+            let orientedX, orientedY;
+
+            // Dynamically assign axis mapping based on how the phone is rotated
+            if (angle === 90) { 
+                // Landscape Primary (Camera usually on the left)
+                orientedX = rawBeta;
+                orientedY = -rawGamma;
+            } else if (angle === -90 || angle === 270) { 
+                // Landscape Secondary (Camera usually on the right)
+                orientedX = -rawBeta;
+                orientedY = rawGamma;
+            } else if (angle === 180) { 
+                // Portrait Upside Down
+                orientedX = -rawGamma;
+                orientedY = -rawBeta;
+            } else { 
+                // Standard Portrait (0)
+                orientedX = rawGamma;
+                orientedY = rawBeta;
+            }
+
+            tiltX = calculateTilt(orientedX);
+            tiltY = calculateTilt(orientedY);
         }
     });
 
-    // DEVICE MOTION (Accelerometer + Gyro Rate)
     window.addEventListener('devicemotion', (e) => {
         if (e.accelerationIncludingGravity) {
             accXEl.innerText = (e.accelerationIncludingGravity.x || 0).toFixed(1);
@@ -196,16 +209,12 @@ function attachSensors() {
     });
 }
 
-
 // --- CALIBRATION SEQUENCE ---
 startBtn.addEventListener('click', async () => {
-    
-    // SECURITY CHECK: Warn Android Chrome users if they are on an insecure HTTP IP address
     if (!window.isSecureContext) {
         alert("WARNING: Your browser is blocking sensors because this connection is not secure (HTTPS).\n\nIf testing locally, use port forwarding or deploy to GitHub Pages!");
     }
 
-    // iOS Safari Permission Check
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
         try {
             const orientationPerm = await DeviceOrientationEvent.requestPermission();
@@ -246,7 +255,6 @@ function finishCalibration() {
     setTimeout(() => uiLayer.classList.add('hidden'), 500);
 }
 
-
 // --- GAME LOOP (Physics & Rendering) ---
 function updatePhysics() {
     let gravityForce = 15; 
@@ -254,7 +262,7 @@ function updatePhysics() {
     let gy = Math.sin(tiltY * (Math.PI / 180)) * gravityForce;
     
     world.setGravity(pl.Vec2(gx, gy));
-    ball.setAwake(true); // Force Planck.js to keep calculating the ball's physics
+    ball.setAwake(true); 
     world.step(1 / 60);
 }
 
