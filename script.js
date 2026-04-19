@@ -175,9 +175,9 @@ function attachSensors() {
             let rawBeta = e.beta - baseBeta;
             let rawGamma = e.gamma - baseGamma;
 
-            // Apply the chosen style curve
-            tiltY = calculateTilt(rawBeta);
-            tiltX = calculateTilt(rawGamma);
+            // Apply the chosen style curve (Swapped for mobile horizontal orientation)
+            tiltX = calculateTilt(rawBeta);
+            tiltY = calculateTilt(rawGamma);
         }
     });
 
