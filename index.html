@@ -9,8 +9,9 @@
 </head>
 <body>
 
-    <!-- TOGGLE BUTTON -->
+    <!-- TOGGLE BUTTONS -->
     <button id="mobile-btn">📱 Fullscreen</button>
+    <button id="options-btn">⚙️ Options</button>
 
     <!-- SENSOR STATS HUD (Top Right) -->
     <div id="stats-panel">
@@ -32,6 +33,28 @@
             <h2>Calibrating...</h2>
             <p>Do not move your device.</p>
             <div id="countdown">4</div>
+        </div>
+    </div>
+
+    <!-- Options Menu Overlay -->
+    <div id="options-screen" class="hidden">
+        <div id="options-menu">
+            <h2>Settings</h2>
+            <br>
+            
+            <label for="tilt-style"><strong>Tilt Responsiveness:</strong></label><br>
+            <select id="tilt-style">
+                <option value="LOGARITHMIC">New Style (Aggressive / Logarithmic)</option>
+                <option value="LINEAR">Old Style (Linear / Smooth)</option>
+            </select>
+            
+            <br><br>
+            
+            <label for="board-size"><strong>Board Size:</strong> <span id="board-size-val">90%</span></label><br>
+            <input type="range" id="board-size" min="0.4" max="1.5" step="0.05" value="0.9">
+            
+            <br><br>
+            <button id="close-options-btn">Close</button>
         </div>
     </div>
 

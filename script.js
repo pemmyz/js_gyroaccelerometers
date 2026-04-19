@@ -1,5 +1,12 @@
 // --- DOM Elements ---
 const mobileToggleBtn = document.getElementById('mobile-btn');
+const optionsBtn = document.getElementById('options-btn');
+const optionsScreen = document.getElementById('options-screen');
+const closeOptionsBtn = document.getElementById('close-options-btn');
+const tiltStyleSelect = document.getElementById('tilt-style');
+const boardSizeSlider = document.getElementById('board-size');
+const boardSizeVal = document.getElementById('board-size-val');
+
 const screenElement = document.getElementById("screen");
 const uiLayer = document.getElementById('ui-layer');
 const menu = document.getElementById('menu');
@@ -31,6 +38,24 @@ let tiltX = 0;
 let tiltY = 0; 
 const maxTilt = 30; 
 
+// Options State
+let tiltStyle = 'LOGARITHMIC'; // Default to the new aggressive style
+let boardSizeMultiplier = 0.9; // 10% smaller by default
+
+// --- Options Menu Event Listeners ---
+optionsBtn.addEventListener('click', () => optionsScreen.classList.remove('hidden'));
+closeOptionsBtn.addEventListener('click', () => optionsScreen.classList.add('hidden'));
+
+tiltStyleSelect.addEventListener('change', (e) => {
+    tiltStyle = e.target.value;
+});
+
+boardSizeSlider.addEventListener('input', (e) => {
+    boardSizeMultiplier = parseFloat(e.target.value);
+    boardSizeVal.innerText = Math.round(boardSizeMultiplier * 100) + '%';
+    scaleGame(); // Update visuals immediately while dragging
+});
+
 // --- Physics (Planck.js) Setup ---
 const pl = planck;
 const scale = 30; 
@@ -51,7 +76,7 @@ const ball = world.createBody({
     position: pl.Vec2(widthM / 2, heightM / 2),
     linearDamping: 0.5,
     angularDamping: 0.5,
-    allowSleep: false // FIX: Prevents the ball from getting stuck asleep during the 4-second calibration
+    allowSleep: false // Prevents the ball from getting stuck asleep during the 4-second calibration
 });
 
 ball.createFixture(pl.Circle(ballRadius), {
@@ -63,7 +88,10 @@ ball.createFixture(pl.Circle(ballRadius), {
 // --- SCALING & FULLSCREEN LOGIC ---
 function scaleGame() {
     const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
-    let screenScale = Math.min(window.innerWidth / 600, window.innerHeight / 600);
+    let baseScale = Math.min(window.innerWidth / 600, window.innerHeight / 600);
+    
+    // Apply the custom multiplier from the options slider
+    let screenScale = baseScale * boardSizeMultiplier;
     
     if (isFullscreen) {
         screenElement.style.transform = `scale(${screenScale * 0.98})`;
@@ -86,6 +114,22 @@ window.addEventListener("webkitfullscreenchange", scaleGame);
 scaleGame(); 
 mobileToggleBtn.addEventListener('click', goFull);
 
+
+// --- TILT MATH HELPER ---
+// Function to handle the two different tilting styles
+function calculateTilt(rawValue) {
+    if (tiltStyle === 'LINEAR') {
+        // OLD STYLE: Even, constant linear progression clamped to maxTilt
+        return Math.max(-maxTilt, Math.min(maxTilt, rawValue));
+    } else {
+        // NEW STYLE (Logarithmic): Fast early movement, then smoothly caps out at maxTilt
+        // Exponential decay acts like a perfect logarithmic/clamping curve here.
+        const aggressiveness = 0.15; // Higher = steeper initial climb
+        return Math.sign(rawValue) * maxTilt * (1 - Math.exp(-aggressiveness * Math.abs(rawValue)));
+    }
+}
+
+
 // --- INPUT HANDLING (Desktop Mouse) ---
 window.addEventListener('mousemove', (e) => {
     // If a real mobile device is detected, ignore the mouse
@@ -97,9 +141,14 @@ window.addEventListener('mousemove', (e) => {
     let normX = (e.clientX - centerX) / centerX;
     let normY = (e.clientY - centerY) / centerY;
     
-    tiltX = normX * maxTilt;
-    tiltY = normY * maxTilt;
+    // Scale normalized value to our raw degrees, then apply formula
+    let rawX = normX * maxTilt;
+    let rawY = normY * maxTilt;
+    
+    tiltX = calculateTilt(rawX);
+    tiltY = calculateTilt(rawY);
 });
+
 
 // --- SENSOR ACTIVATION ---
 function attachSensors() {
@@ -110,7 +159,7 @@ function attachSensors() {
     window.addEventListener('deviceorientation', (e) => {
         if (e.beta == null || e.gamma == null) return;
         
-        // FIX: Desktop Chrome sends a fake event where beta and gamma are exactly 0.
+        // Desktop Chrome sends a fake event where beta and gamma are exactly 0.
         // Physical phone sensors always have micro-noise (e.g., 0.002), so we ignore perfect zeros.
         if (e.beta === 0 && e.gamma === 0) return;
 
@@ -126,8 +175,9 @@ function attachSensors() {
             let rawBeta = e.beta - baseBeta;
             let rawGamma = e.gamma - baseGamma;
 
-            tiltY = Math.max(-maxTilt, Math.min(maxTilt, rawBeta));
-            tiltX = Math.max(-maxTilt, Math.min(maxTilt, rawGamma));
+            // Apply the chosen style curve
+            tiltY = calculateTilt(rawBeta);
+            tiltX = calculateTilt(rawGamma);
         }
     });
 
@@ -145,6 +195,7 @@ function attachSensors() {
         }
     });
 }
+
 
 // --- CALIBRATION SEQUENCE ---
 startBtn.addEventListener('click', async () => {
